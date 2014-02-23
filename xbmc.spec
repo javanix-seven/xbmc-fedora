@@ -4,9 +4,9 @@ Release: 1%{?dist}
 Summary: XBMC is an award-winning free and open source (GPL) software media player
 
 License: GPL	
-Source0: xbmc-%{version}.tar.gz
+Source0: xbmc.tar.gz
 
-Patch0:	 xbmc-13.0-fedora-cpluff.patch
+BuildRequires: /usr/bin/autopoint
 
 BuildRequires: SDL-devel
 BuildRequires: SDL-static
@@ -55,6 +55,8 @@ BuildRequires: expat-devel
 BuildRequires: faac-devel
 BuildRequires: faad2-devel
 BuildRequires: faad2-libs
+BuildRequires: ffmpeg-devel
+BuildRequires: ffmpeg
 BuildRequires: flac-devel
 BuildRequires: fontconfig-devel
 BuildRequires: freetype-devel
@@ -142,6 +144,7 @@ BuildRequires: libverto-devel
 BuildRequires: libvorbis-devel
 BuildRequires: libxcb-devel
 BuildRequires: libxml2-devel
+BuildRequires: libxslt-devel
 BuildRequires: lzma-sdk457
 BuildRequires: lzo-devel
 BuildRequires: lzo-minilzo
@@ -153,6 +156,8 @@ BuildRequires: mesa-libEGL-devel
 BuildRequires: mesa-libGL-devel
 BuildRequires: mesa-libGLES-devel
 BuildRequires: mesa-libGLU-devel
+BuildRequires: nasm
+BuildRequires: nettle-devel
 BuildRequires: openssl-devel
 BuildRequires: p11-kit-devel
 BuildRequires: pango-devel
@@ -248,50 +253,78 @@ BuildRequires: wavpack-devel
 BuildRequires: xorg-x11-proto-devel
 BuildRequires: xz-devel
 BuildRequires: yajl-devel
-BuildRequires: zlib-devel
-BuildRequires: libxslt-devel
 BuildRequires: yasm-devel
-BuildRequires: nettle-devel
-BuildRequires: /usr/bin/autopoint
+BuildRequires: zlib-devel
 
 %description
 XBMC is an award-winning free and open source (GPL) software media player and entertainment hub that can be installed on Linux
 
 %prep
-%setup -q
+%setup -q -n %{name}
 
-# Patch configure file so that cpluff gets 'autogen'ed first.
-%patch0 -p1
+./bootstrap
+
+./configure \
+	    --prefix=%{_prefix} \
+   	    --bindir=%{_bindir} \
+	    --includedir=%{_includedir} \
+	    --libdir=%{_libdir} \
+	    --datadir=%{_datadir} \
+	    --with-lirc-device=/var/run/lirc/lircd \
+	    --enable-goom \
+	    --enable-external-libraries \
+	    --disable-ssh \
+	    --disable-dvdcss \
+	    --disable-optimizations \
+	    --disable-debug \
+	    --disable-mysql \
+	    CPPFLAGS="-I/usr/include/ffmpeg" \
+	    CFLAGS="$RPM_OPT_FLAGS -fPIC -I/usr/include/afpfs-ng/ -I/usr/include/ffmpeg -I/usr/include/samba-4.0/ -D__STDC_CONSTANT_MACROS" \
+	    CXXFLAGS="$RPM_OPT_FLAGS -fPIC -I/usr/include/afpfs-ng/ -I/usr/include/ffmpeg -I/usr/include/samba-4.0/ -D__STDC_CONSTANT_MACROS" \
+	    LDFLAGS="-fPIC" \
+	    LIBS="$LIBS" \
+	    ASFLAGS=-fPIC
 
 %build
-%configure --disable-dvdcss --disable-afpclient --disable-mysql --disable-webserver --disable-optical-drive --disable-rsxs
-
-make V=0 DESTDIR=$RPM_BUILD_ROOT
+make -j2 V=0 DESTDIR=$RPM_BUILD_ROOT
 
 %install
-make V=0 DESTDIR=$RPM_BUILD_ROOT install
+make -j2 V=0 DESTDIR=$RPM_BUILD_ROOT install
 
 %files
-%exclude %{_prefix}/share/applications/xbmc.desktop
-%exclude %{_prefix}/share/xsessions/XBMC.desktop
-
 %{_bindir}/xbmc
 %{_bindir}/xbmc-standalone
-
-%dir %{_includedir}/xbmc
-%{_includedir}/xbmc/*
-
-%dir %{_libdir}/xbmc
-%{_libdir}/xbmc/*
-
-%dir %{_prefix}/share/doc/xbmc
-%{_prefix}/share/doc/xbmc/*
-
-%{_prefix}/share/icons/hicolor/256x256/apps/xbmc.png
-%{_prefix}/share/icons/hicolor/48x48/apps/xbmc.png
-
-%dir %{_prefix}/share/xbmc
-%{_prefix}/share/xbmc/*
+%{_libdir}/xbmc/addons/library.xbmc.addon/libXBMC_addon-x86_64-linux.so
+%{_libdir}/xbmc/addons/library.xbmc.gui/libXBMC_gui-x86_64-linux.so
+%{_libdir}/xbmc/addons/library.xbmc.pvr/libXBMC_pvr-x86_64-linux.so
+%{_libdir}/xbmc/addons/screensaver.rsxs.euphoria/Euphoria.xbs
+%{_libdir}/xbmc/addons/screensaver.rsxs.plasma/Plasma.xbs
+%{_libdir}/xbmc/addons/screensaver.rsxs.solarwinds/Solarwinds.xbs
+%{_libdir}/xbmc/addons/visualization.glspectrum/opengl_spectrum.vis
+%{_libdir}/xbmc/addons/visualization.goom/Goom.vis
+%{_libdir}/xbmc/addons/visualization.projectm/projectM.vis
+%{_libdir}/xbmc/addons/visualization.waveform/Waveform.vis
+%{_libdir}/xbmc/system/ImageLib-x86_64-linux.so
+%{_libdir}/xbmc/system/hdhomerun-x86_64-linux.so
+%{_libdir}/xbmc/system/libcpluff-x86_64-linux.so
+%{_libdir}/xbmc/system/libexif-x86_64-linux.so
+%{_libdir}/xbmc/system/players/dvdplayer/libdvdnav-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/adpcm-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/libsidplay2-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/nosefart-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/stsoundlibrary-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/timidity-x86_64-linux.so
+%{_libdir}/xbmc/system/players/paplayer/vgmstream-x86_64-linux.so
+%{_libdir}/xbmc/xbmc-xrandr
+%{_libdir}/xbmc/xbmc.bin
+%{_datarootdir}/applications/xbmc.desktop
+%{_datarootdir}/doc/xbmc/LICENSE.GPL
+%{_datarootdir}/doc/xbmc/README.linux
+%{_datarootdir}/doc/xbmc/copying.txt
+%{_datarootdir}/icons/hicolor/256x256/apps/xbmc.png
+%{_datarootdir}/icons/hicolor/48x48/apps/xbmc.png
+%{_datarootdir}/xbmc/*
+%{_datarootdir}/xsessions/XBMC.desktop
 
 %changelog
 * Sat Feb 08 2014 javanix.seven <javanix.seven@gmail.com> 13.0-1
